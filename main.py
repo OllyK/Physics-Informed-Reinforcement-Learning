@@ -97,7 +97,7 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--pretrained_ckpt', type=str,
-        default=f'{Path(__file__).resolve().parent}/pretrained/pretrained_1100nm_60degree.pt',
+        default=f'{Path(__file__).resolve().parent}/Pretrained_UNet_1100wl_60deg.pt',
         help='absolute path to checkpoint file of pretrained model'
     )
     parser.add_argument(
@@ -143,7 +143,7 @@ if __name__ == '__main__':
     register_env(env_id, lambda c: make_env(env_config))
     ModelCatalog.register_custom_model(model_cls.__name__, model_cls)
 
-    from configs.simple_q import multiple_worker as config
+    from configs.simple_q import single_worker as config
 
     config.framework(
         framework='torch'

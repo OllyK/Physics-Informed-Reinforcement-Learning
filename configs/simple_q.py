@@ -53,8 +53,8 @@ multiple_worker.training(
     target_network_update_freq=2000,
     replay_buffer_config={
         "_enable_replay_buffer_api": True,
-        "type": "ReplayBuffer",
-        # "type": "MultiAgentReplayBuffer", # when num_workers > 0
+        #"type": "ReplayBuffer",
+        "type": "MultiAgentReplayBuffer", # when num_workers > 0
         "learning_starts": 1000,
         "capacity": 100000,
         "replay_sequence_length": 1,

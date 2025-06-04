@@ -125,7 +125,20 @@ if __name__ == '__main__':
 
     os.makedirs(LOG_DIR, exist_ok=True)
 
-    ray.init(local_mode=False)
+    def try_start_ray(local_mode):
+        depth = 0
+        while True:
+            try:
+                print("Trying to start ray.")
+                ray.init(local_mode=local_mode, include_dashboard=False)
+                break
+            except:
+                waittime = np.random.randint(1, 10 * 2**depth)
+                print(f"Failed to start ray on attempt {depth+1}. Retrying in {waittime} seconds...")
+                sleep(waittime)
+                depth += 1
+
+    try_start_ray(local_mode=False)
 
     env_id = 'MeentIndex-v0'
     env_config = {'wavelength': args.wavelength, 'desired_angle': args.angle, 'thickness': args.thickness}
@@ -143,7 +156,7 @@ if __name__ == '__main__':
     register_env(env_id, lambda c: make_env(env_config))
     ModelCatalog.register_custom_model(model_cls.__name__, model_cls)
 
-    from configs.simple_q import single_worker as config
+    from configs.simple_q import multiple_worker as config
 
     config.framework(
         framework='torch'

@@ -1,8 +1,8 @@
 #! /bin/bash
 #SBATCH --ntasks=1
 #SBATCH --time=02:00:00
-#SBATCH --output=$DATA/nano_rl_logs/nano_rl_%A.out
-#SBATCH --error=$DATA/nano_rl_logs/nano_rl_%A.err
+#SBATCH --output=nano_rl_logs/nano_rl_%A.out
+#SBATCH --error=nano_rl_logs/nano_rl_%A.err
 #SBATCH --gres=gpu:h100:2
 #SBATCH --mem-per-gpu=32G
 #SBATCH --cpus-per-task=17

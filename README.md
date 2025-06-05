@@ -46,6 +46,14 @@ A script is included in this repository for submitting a job to the HTC cluster 
 sbatch run_nano_rl_h100.sh
 ```
 6. If the script runs successfully data will be output to a subdirectory in the `Physics-Informed-Reinforcement-Learning/runs` directory. Details of which subdirectory can be found in the  Slurm output log for the job (`nano_rl_logs/nano_rl_xxxxxx.out`)
+7. You can find the file containing the result with the hightest efficiency by changing directory to the relevant results folder and running this command in the terminal:
+```shell
+ls w*.npy \
+| awk -F '[_.-]' '{ printf "%s\t%s\n", $2"."$3, $0 }' \
+| sort -k1,1n \
+| tail -1 \
+| cut -f2
+```
 
 
 ## Local Installation

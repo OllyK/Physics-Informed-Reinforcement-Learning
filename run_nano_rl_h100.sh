@@ -10,7 +10,7 @@
 #SBATCH --partition=short
 #SBATCH --job-name=nano_rl
 #SBATCH --mail-type=BEGIN,END
-#SBATCH --mail-user=oliver.king@dtc.ox.ac.uk
+#SBATCH --mail-user=<insert your email here>
 
 set -e
 module load Anaconda3

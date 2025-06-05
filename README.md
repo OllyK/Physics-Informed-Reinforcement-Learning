@@ -39,8 +39,8 @@ A script is included in this repository for submitting a job to the HTC cluster 
 
 1. Follow the instructions [to setup your environment on ARC](#setup-on-arc-hpc-system)
 2. Login to the HTC login node if not already done
-3. Ensure you have edited the script `run_nano_rl_h100.sh` in ths repository (`cd $DATA/repos/Physics-Informed-Reinforcement-Learning`) to replace `<insert your email here>` with your email address.
-4. Ensure there is a directory named `nano_rl_logs` in you current working directory (slurm output logs will be saves here) `mkdir -p nano_rl_logs`. 
+3. Ensure you have edited the script `run_nano_rl_h100.sh` in this repository (`cd $DATA/repos/Physics-Informed-Reinforcement-Learning`) to replace `<insert your email here>` with your email address.
+4. Ensure there is a directory named `nano_rl_logs` in your current working directory (slurm output logs will be saved here) `mkdir -p nano_rl_logs`. 
 5. Submit the script to the Slurm scheduler
 ```shell
 sbatch run_nano_rl_h100.sh

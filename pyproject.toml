@@ -1,0 +1,11 @@
+[project]
+name = "physics-informed-reinforcement-learning"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "gputil>=1.4.0",
+    "ray[rllib]==2.1.0",
+    "torch>=2.7.1",
+]

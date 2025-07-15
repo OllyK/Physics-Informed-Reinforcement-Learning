@@ -121,7 +121,7 @@ if __name__ == '__main__':
         help='refractive index of the pillar material'
     )
     parser.add_argument(
-        '--ri_2', type=float, default=1.00,
+        '--ri_2', type=float, default=0.00,
         help='alternative refractive index for the pillar material'
     )
 
@@ -148,7 +148,11 @@ if __name__ == '__main__':
 
     try_start_ray(local_mode=False)
 
-    env_id = 'MeentIndex-v0'
+    if args.ri_2 == 0.0:
+        env_id = 'MeentIndex-v0'
+    else:
+        env_id = 'MultiRIIndex-v0'
+    
     env_config = {
         'wavelength': args.wavelength, 
         'desired_angle': args.angle, 

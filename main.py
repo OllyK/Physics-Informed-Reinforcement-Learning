@@ -116,6 +116,14 @@ if __name__ == '__main__':
         '--train_steps', type=int, default=200000,
         help='number of training steps'
     )
+    parser.add_argument(
+        '--ri_1', type=float, default=1.45,
+        help='refractive index of the pillar material'
+    )
+    parser.add_argument(
+        '--ri_2', type=float, default=1.00,
+        help='alternative refractive index for the pillar material'
+    )
 
     args = parser.parse_args()
 
@@ -141,7 +149,13 @@ if __name__ == '__main__':
     try_start_ray(local_mode=False)
 
     env_id = 'MeentIndex-v0'
-    env_config = {'wavelength': args.wavelength, 'desired_angle': args.angle, 'thickness': args.thickness}
+    env_config = {
+        'wavelength': args.wavelength, 
+        'desired_angle': args.angle, 
+        'thickness': args.thickness,
+        'refractive_index': args.ri_1,
+        'refractive_index_2': args.ri_2,
+    }
     model_cls = ShallowUQNet  # model_cls = ShallowUQNet / FCNQNet / FCNQNet_heavy
 
     def make_env(config):

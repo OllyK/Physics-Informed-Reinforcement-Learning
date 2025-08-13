@@ -1,24 +1,24 @@
+# Standard library
 import argparse
-from datetime import datetime
-from pathlib import Path
 import os
+from datetime import datetime
 from operator import itemgetter
+from pathlib import Path
+from time import sleep
 
+# Third-party
 import numpy as np
-
 import torch
-
 import ray
 from ray import air, tune
 from ray.tune import register_env
-
 from ray.rllib.algorithms.callbacks import DefaultCallbacks
 from ray.rllib.models import ModelCatalog
-
 from gym.wrappers import TimeLimit
+
+# Local
 import deflector_gym
 from deflector_gym.wrappers import BestRecorder, ExpandObservation
-
 from model import ShallowUQNet
 from utils import StructureWriter, seed_all
 
@@ -124,6 +124,11 @@ if __name__ == '__main__':
         '--ri_2', type=float, default=0.00,
         help='alternative refractive index for the pillar material'
     )
+    parser.add_argument(
+        '--reward_mode', type=str, default='shaped',
+        choices=['margin','weighted_margin','margin_delta','ratio','log_ratio','shaped','original'],
+        help='Reward strategy for MultiRIIndex (ignored if single RI).'
+    )
 
     args = parser.parse_args()
 
@@ -150,16 +155,22 @@ if __name__ == '__main__':
 
     if args.ri_2 == 0.0:
         env_id = 'MeentIndex-v0'
+        env_config = {
+            'wavelength': args.wavelength,
+            'desired_angle': args.angle,
+            'thickness': args.thickness,
+            'refractive_index': args.ri_1,
+        }
     else:
         env_id = 'MultiRIIndex-v0'
-    
-    env_config = {
-        'wavelength': args.wavelength, 
-        'desired_angle': args.angle, 
-        'thickness': args.thickness,
-        'refractive_index': args.ri_1,
-        'refractive_index_2': args.ri_2,
-    }
+        env_config = {
+            'wavelength': args.wavelength,
+            'desired_angle': args.angle,
+            'thickness': args.thickness,
+            'refractive_index': args.ri_1,
+            'refractive_index_2': args.ri_2,
+            'reward_mode': args.reward_mode,
+        }
     model_cls = ShallowUQNet  # model_cls = ShallowUQNet / FCNQNet / FCNQNet_heavy
 
     def make_env(config):

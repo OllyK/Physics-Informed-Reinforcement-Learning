@@ -66,17 +66,47 @@ class StructureWriter(gym.Wrapper):
         """
         when episode is done,
         the structure(metasurface) is written to the file
-        
-        e.g. /mnt/8tb/MeentIndex/88-312342_20221111-123012.npy
-        """
 
+        For single-index envs: filename encodes eff.
+        For multi-RI envs: filename encodes eff_on, eff_off, margin.
+        Saved file now contains a dict:
+          {
+            'structure': <1D array>,
+            'eff': <margin or single eff>,
+            'eff_on': <present only for MultiRIIndex>,
+            'eff_off': <present only for MultiRIIndex>
+          }
+        """
         obs = self.env.reset(**kwargs)
 
         if not self.disabled:
-            filename = f'{self.eff * 100:.6f}'.replace('.', '-')
+            unwrapped = self.env.unwrapped
+            # detect multi-RI
+            has_multi = hasattr(unwrapped, 'eff_on') and hasattr(unwrapped, 'eff_off')
+            if has_multi:
+                eff_on = float(unwrapped.eff_on)
+                eff_off = float(unwrapped.eff_off)
+                margin = float(unwrapped.eff)  # already eff_on - eff_off
+                filename = (
+                    f'on{eff_on*100:.6f}_off{eff_off*100:.6f}_m{margin*100:.6f}'
+                    .replace('.', '-')
+                )
+            else:
+                eff_single = float(getattr(unwrapped, 'eff', 0.0))
+                filename = f'{eff_single * 100:.6f}'.replace('.', '-')
+
             filename += '_' + datetime.now().strftime('%Y%m%d-%H%M%S')
             filename = self._j(self.data_dir, filename)
-            np.save(filename,
-                    obs[0])  # remove channel dimenstion used for convolution
+
+            data = {
+                'structure': obs[0],  # original structure
+                'eff': float(getattr(unwrapped, 'eff', 0.0)),
+            }
+            if has_multi:
+                data['eff_on'] = eff_on
+                data['eff_off'] = eff_off
+
+            # store dictionary (np.save will pickle automatically)
+            np.save(filename, data, allow_pickle=True)
 
         return obs

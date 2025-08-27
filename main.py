@@ -18,7 +18,7 @@ from gym.wrappers import TimeLimit
 
 # Local
 import deflector_gym
-from deflector_gym.wrappers import BestRecorder, ExpandObservation
+from deflector_gym.wrappers import BestRecorder, Best2RewardRecorder, ExpandObservation
 from model import ShallowUQNet
 from utils import StructureWriter, seed_all
 
@@ -31,7 +31,6 @@ seeding needs to be taken care when multiple workers are used,
 that is, you need to set seed for each worker
 """
 seed_all(42)
-
 
 class Callbacks(DefaultCallbacks):
     """
@@ -83,6 +82,69 @@ class Callbacks(DefaultCallbacks):
         filename = 'w' + str(worker.worker_index) + f'_{eff * 100:.6f}'.replace('.', '-')
         filename = self._j(LOG_DIR, filename)
         np.save(filename, struct)
+        
+class TwoRewardCallbacks(DefaultCallbacks):
+    """
+    logging class for rllib
+    the method's name itself stands for the logging timing
+
+    e.g. 
+    `if step % train_interval == 0:` is equivalent to `on_learn_on_batch`
+
+    you may feel uncomfortable with this logging procedure, 
+    but when distributed training is used, it's inevitable
+    """
+
+    def on_create_policy(self, *, policy_id, policy) -> None:
+        state_dict = torch.load(
+            PRETRAINED_CKPT,
+            map_location=torch.device('cpu')
+        )
+        policy.set_weights(state_dict)
+
+    def on_algorithm_init(self, *, algorithm, **kwargs) -> None:
+        print(algorithm.get_policy().model)
+        # seed_all(42)
+
+    def _get_max(self, base_env):
+        # Now returns the full tuple: (eff, struct, eff_on, eff_off)
+        bests = [e.best for e in base_env.get_sub_environments()]
+        best = max(bests, key=itemgetter(0))
+        return best
+
+    def _tb_image(self, structure):
+        # transform structure to tensorboard addable image
+        img = structure[np.newaxis, np.newaxis, :].repeat(32, axis=1)
+
+        return img
+
+    def on_episode_start(self, *, worker, base_env, policies, episode, env_index=None, **kwargs) -> None:
+        best = self._get_max(base_env)
+        eff = best[0]
+        episode.custom_metrics['initial_efficiency'] = eff
+
+    def _j(self, a, b):
+        return os.path.join(a, b)
+
+    def on_episode_end(self, *, worker, base_env, policies, episode, **kwargs, ) -> None:
+        best = self._get_max(base_env)
+        eff, struct, eff_on, eff_off = best[0], best[1], best[2], best[3]
+        episode.custom_metrics['max_efficiency'] = eff
+
+        if eff_on is not None and eff_off is not None:
+            # Multi-RI: include on/off/margin in the filename and save a dict
+            filename = (
+                'w' + str(worker.worker_index) +
+                f'_on{eff_on*100:.6f}_off{eff_off*100:.6f}_m{eff*100:.6f}'
+            ).replace('.', '-')
+            data = {'structure': struct, 'eff': float(eff), 'eff_on': float(eff_on), 'eff_off': float(eff_off)}
+        else:
+            # Single-RI
+            filename = 'w' + str(worker.worker_index) + f'_{eff * 100:.6f}'.replace('.', '-')
+            data = {'structure': struct, 'eff': float(eff)}
+
+        filename = self._j(LOG_DIR, filename)
+        np.save(filename, data, allow_pickle=True)
 
 
 if __name__ == '__main__':
@@ -152,8 +214,11 @@ if __name__ == '__main__':
                 depth += 1
 
     try_start_ray(local_mode=False)
+    
+    two_reward_mode_fl = args.ri_2 != 0.0
 
-    if args.ri_2 == 0.0:
+    # TODO: This should be tidied up into classes
+    if not two_reward_mode_fl:
         env_id = 'MeentIndex-v0'
         env_config = {
             'wavelength': args.wavelength,
@@ -161,6 +226,8 @@ if __name__ == '__main__':
             'thickness': args.thickness,
             'refractive_index': args.ri_1,
         }
+        cbs = Callbacks
+        best_recorder = BestRecorder
     else:
         env_id = 'MultiRIIndex-v0'
         env_config = {
@@ -171,11 +238,14 @@ if __name__ == '__main__':
             'refractive_index_2': args.ri_2,
             'reward_mode': args.reward_mode,
         }
+        cbs = TwoRewardCallbacks
+        best_recorder = Best2RewardRecorder
+
     model_cls = ShallowUQNet  # model_cls = ShallowUQNet / FCNQNet / FCNQNet_heavy
 
     def make_env(config):
         env = deflector_gym.make(env_id, **config)
-        env = BestRecorder(env)
+        env = best_recorder(env)
         env = ExpandObservation(env)
         env = StructureWriter(env, DATA_DIR)
         env = TimeLimit(env, max_episode_steps=128)
@@ -194,7 +264,7 @@ if __name__ == '__main__':
         env_config=env_config,
         normalize_actions=False
     ).callbacks(
-        Callbacks  # register logging
+        cbs  # register logging
     ).training(
         model={'custom_model': model_cls}
     ).debugging(

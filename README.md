@@ -57,6 +57,13 @@ ls w*.npy \
 
 ## Running with 2 refractive indices
 
+NOTE: You will need to pull the branch jl/two_ris and update the deflector-gym submodule, i.e.
+``` shell
+cd $DATA/repos/Physics-Informed-Reinforcement-Learning
+git checkout jl/two_ris
+git submodule update --recursive
+```
+
 Another script is included which shows how to run a job to optimise for 2 refractive indices, which follows very similar 
 instructions to above, but changing all references to `run_nano_rl_h100.sh` to `run_nano_rl_2ris.sh1` instead, i.e. 
 
@@ -85,7 +92,7 @@ The reward mode is currently a bit experimental, but can be set to:
 - 'shaped' - Similar to 'original', but attempts to weight the two efficiencies to go to 100 and 0 percent respectively (experimental)
 
 #### Scanning
-I've included a python script to search the directory for the best (highest efficiency) result and output the structure 
+There's now a python script to search the directory for the best (highest efficiency) result and output the structure 
 to screen (along with efficiencies). To use this you will need to activate the conda environment we made in [the setup section](#setup-on-arc-hpc-system) 
 and run the necesasry command. Specifically:
 
@@ -99,7 +106,12 @@ conda load $DATA/venvs/nano_rl
 cd $DATA/repos/Physics-Informed-Reinforcement-Learning
 ```
 3. Run the scan command 
+``` shell
+python scan.py run/{output_run_dir}
+```
 
+where `{output_run_dir}` is the output directory of the run you're interested in, which by default is the `{date}_{time}` 
+of the run. 
  
 
 

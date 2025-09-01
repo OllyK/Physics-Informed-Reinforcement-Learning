@@ -55,6 +55,53 @@ ls w*.npy \
 | cut -f2
 ```
 
+## Running with 2 refractive indices
+
+Another script is included which shows how to run a job to optimise for 2 refractive indices, which follows very similar 
+instructions to above, but changing all references to `run_nano_rl_h100.sh` to `run_nano_rl_2ris.sh1` instead, i.e. 
+
+1. Follow the instructions [to setup your environment on ARC](#setup-on-arc-hpc-system)
+2. Login to the HTC login node if not already done
+3. Ensure you have edited the script `run_nano_rl_2ris.sh` in this repository (`cd $DATA/repos/Physics-Informed-Reinforcement-Learning`) to replace `<insert your email here>` with your email address.
+4. Ensure there is a directory named `nano_rl_logs` in your current working directory (slurm output logs will be saved here) `mkdir -p nano_rl_logs`. 
+5. Submit the script to the Slurm scheduler
+```shell
+sbatch run_nano_rl_2ris.sh
+```
+6. If the script runs successfully data will be output to a subdirectory in the `Physics-Informed-Reinforcement-Learning/runs` directory. Details of which subdirectory can be found in the  Slurm output log for the job (`nano_rl_logs/nano_rl_xxxxxx.out`)
+
+You'll probably want to change the values set for the two refractive indices in the slurm script, which you can do by 
+editing this line:
+``` shell
+python main.py --data_dir $DATA/repos/Physics-Informed-Reinforcement-Learning/run --ri_1 1.5 --ri_2 3.5 --reward_mode original
+``` 
+where ri_1 is the refractive index to maximise efficiency for and ri_2 is the one to minimise efficiency for. 
+
+The reward mode is currently a bit experimental, but can be set to:
+- 'margin' - One efficiency minus the other 
+- 'ratio' - Ratio of the two efficiencies 
+- 'log_ratio' - Log ratio of the two efficiencies
+- 'original' - Change of efficiency for ri_1 minus the change in efficiency for ri_2
+- 'shaped' - Similar to 'original', but attempts to weight the two efficiencies to go to 100 and 0 percent respectively (experimental)
+
+#### Scanning
+I've included a python script to search the directory for the best (highest efficiency) result and output the structure 
+to screen (along with efficiencies). To use this you will need to activate the conda environment we made in [the setup section](#setup-on-arc-hpc-system) 
+and run the necesasry command. Specifically:
+
+1. Run the following commands to activate your conda environment 
+``` shell
+module load Anaconda3
+conda load $DATA/venvs/nano_rl
+```
+2. Make sure you've changed directory to the repo
+``` shell
+cd $DATA/repos/Physics-Informed-Reinforcement-Learning
+```
+3. Run the scan command 
+
+ 
+
 
 ## Local Installation
 

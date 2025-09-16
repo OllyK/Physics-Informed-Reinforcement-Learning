@@ -188,8 +188,16 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         '--reward_mode', type=str, default='shaped',
-        choices=['margin','weighted_margin','margin_delta','ratio','log_ratio','shaped','original'],
+        choices=['margin','weighted_margin','margin_delta','ratio','log_ratio','shaped','original', 'z-score'],
         help='Reward strategy for MultiRIIndex (ignored if single RI).'
+    )
+    parser.add_argument(
+        '--beta', type=float, default=0.99,
+        help='Beta parameter for the reward function.'
+    )
+    parser.add_argument(
+        '--eps', type=float, default=1e-8,
+        help='Epsilon parameter for the reward function.'
     )
 
     args = parser.parse_args()
@@ -237,6 +245,8 @@ if __name__ == '__main__':
             'refractive_index': args.ri_1,
             'refractive_index_2': args.ri_2,
             'reward_mode': args.reward_mode,
+            'beta': args.beta,
+            'eps': args.eps,
         }
         cbs = TwoRewardCallbacks
         best_recorder = Best2RewardRecorder
@@ -255,7 +265,7 @@ if __name__ == '__main__':
     register_env(env_id, lambda c: make_env(env_config))
     ModelCatalog.register_custom_model(model_cls.__name__, model_cls)
 
-    from configs.simple_q import multiple_worker as config
+    from configs.simple_q import single_worker as config
 
     config.framework(
         framework='torch'

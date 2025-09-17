@@ -265,7 +265,7 @@ if __name__ == '__main__':
     register_env(env_id, lambda c: make_env(env_config))
     ModelCatalog.register_custom_model(model_cls.__name__, model_cls)
 
-    from configs.simple_q import single_worker as config
+    from configs.simple_q import multiple_worker as config
 
     config.framework(
         framework='torch'

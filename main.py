@@ -167,6 +167,14 @@ if __name__ == '__main__':
         help='wavelength of the incident light'
     )
     parser.add_argument(
+        '--wavelength_2', type=int, default=0,
+        help='alternative wavelength for the incident light (0 for single wavelength)'
+    )
+    parser.add_argument(
+        '--wavelength_3', type=int, default=0,
+        help='alternative wavelength for the incident light (0 for single wavelength)'
+    )
+    parser.add_argument(
         '--angle', type=int, default=60,
         help='target deflection angle condition'
     )
@@ -223,20 +231,27 @@ if __name__ == '__main__':
 
     try_start_ray(local_mode=False)
     
-    two_reward_mode_fl = args.ri_2 != 0.0
-
     # TODO: This should be tidied up into classes
-    if not two_reward_mode_fl:
-        env_id = 'MeentIndex-v0'
+    # decide which environment to use
+    # single or two reward mode
+    two_reward_mode_fl = args.ri_2 != 0.0
+    two_wavelength_mode_fl = args.wavelength_2 != 0 and args.wavelength_3 != 0
+    if two_wavelength_mode_fl:
+        assert not two_reward_mode_fl, "Multi-wavelength mode only works without multi-RI environment"
+        print("Using MultiWavelengthIndex environment")
+        env_id = 'MultiWavelengthIndex-v0'
         env_config = {
             'wavelength': args.wavelength,
+            'wavelength_off1': args.wavelength_2,
+            'wavelength_off2': args.wavelength_3,
             'desired_angle': args.angle,
             'thickness': args.thickness,
             'refractive_index': args.ri_1,
         }
-        cbs = Callbacks
-        best_recorder = BestRecorder
-    else:
+        cbs = TwoRewardCallbacks
+        best_recorder = Best2RewardRecorder
+
+    elif two_reward_mode_fl:
         env_id = 'MultiRIIndex-v0'
         env_config = {
             'wavelength': args.wavelength,
@@ -250,6 +265,16 @@ if __name__ == '__main__':
         }
         cbs = TwoRewardCallbacks
         best_recorder = Best2RewardRecorder
+    else:
+        env_id = 'MeentIndex-v0'
+        env_config = {
+            'wavelength': args.wavelength,
+            'desired_angle': args.angle,
+            'thickness': args.thickness,
+            'refractive_index': args.ri_1,
+        }
+        cbs = Callbacks
+        best_recorder = BestRecorder
 
     model_cls = ShallowUQNet  # model_cls = ShallowUQNet / FCNQNet / FCNQNet_heavy
 
@@ -265,7 +290,7 @@ if __name__ == '__main__':
     register_env(env_id, lambda c: make_env(env_config))
     ModelCatalog.register_custom_model(model_cls.__name__, model_cls)
 
-    from configs.simple_q import multiple_worker as config
+    from configs.simple_q import single_worker as config
 
     config.framework(
         framework='torch'

@@ -1,5 +1,6 @@
 *.zip
 *.pt
+*.npy
 .vscode
 .idea
 .DS_Store

@@ -207,6 +207,10 @@ if __name__ == '__main__':
         '--eps', type=float, default=1e-8,
         help='Epsilon parameter for the reward function.'
     )
+    parser.add_argument(
+        '--eff_order', type=int, default=1,
+        help='Order of the efficiency calculation.'
+    )
 
     args = parser.parse_args()
 
@@ -272,6 +276,7 @@ if __name__ == '__main__':
             'desired_angle': args.angle,
             'thickness': args.thickness,
             'refractive_index': args.ri_1,
+            'eff_order': args.eff_order,
         }
         cbs = Callbacks
         best_recorder = BestRecorder

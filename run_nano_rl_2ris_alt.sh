@@ -2,7 +2,7 @@
 #SBATCH --job-name=pirl_original_1-5_3-5
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=17
+#SBATCH --cpus-per-task=20
 #SBATCH --time=3:00:00
 #SBATCH --output=pirl_2ri_logs/%x_%A.out
 #SBATCH --error=pirl_2ri_logs/%x_%A.err
@@ -27,6 +27,13 @@ which python
 nvidia-smi
 ulimit -n 65535
 ulimit -u 65535
+
+# Preserve Ray's session logs (raylet/gcs/dashboard_agent) for post-mortem even on failure,
+# since /tmp is per-job and wiped at job end. These reveal the real cause behind the masked
+# "Failed to start the dashboard" / "Unable to register worker with raylet" errors.
+RAY_LOG_DEST="${SLURM_SUBMIT_DIR:-.}/ray_logs_${SLURM_JOB_ID}"
+trap 'mkdir -p "$RAY_LOG_DEST"; cp -r /tmp/ray/session_*/logs "$RAY_LOG_DEST"/ 2>/dev/null || true' EXIT
+
 cd $DATA_S/PIRL/Physics-Informed-Reinforcement-Learning
 python main.py --data_dir $DATA_S/PIRL/run --ri_1 1.5 --ri_2 3.5 --reward_mode original
 

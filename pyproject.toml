@@ -6,6 +6,12 @@ readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
     "gputil>=1.4.0",
-    "ray[rllib]==2.1.0",
+    # Ray 2.1.0 + its dashboard/agent deps pinned to mutually compatible versions; see
+    # requirements.txt for why (the raylet fate-shares with a broken agent and dies otherwise).
+    "ray[default,rllib]==2.1.0",
+    "grpcio<=1.51.3",
+    "aiohttp==3.8.6",
+    "aiohttp-cors==0.7.0",
+    "pydantic<2",
     "torch>=2.7.1",
 ]

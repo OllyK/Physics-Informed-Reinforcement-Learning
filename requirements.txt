@@ -1,4 +1,13 @@
-ray[rllib]==2.1.0
+ray[default,rllib]==2.1.0
+# Pin Ray 2.1.0's dashboard/agent deps to versions compatible with this 2022-era Ray.
+# Against a current PyPI these float to incompatible-new versions (aiohttp>=3.9,
+# aiohttp-cors 0.8, pydantic 2, grpcio>1.51) which break the dashboard agent -- the raylet
+# then fate-shares with the failed agent and dies on startup ("Unable to register worker
+# with raylet"). Keep these pinned so a fresh venv can't regress.
+grpcio<=1.51.3
+aiohttp==3.8.6
+aiohttp-cors==0.7.0
+pydantic<2
 torch
 gputil
 

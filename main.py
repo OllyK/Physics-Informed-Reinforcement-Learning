@@ -217,15 +217,33 @@ if __name__ == '__main__':
     os.makedirs(LOG_DIR, exist_ok=True)
 
     def try_start_ray(local_mode):
+        # On a shared SLURM node Ray over-detects CPUs (it sees all physical cores, not the
+        # cgroup allocation) and pre-starts one idle worker per core. On an NFS-mounted venv
+        # that storm of simultaneous imports starves Ray's dashboard/agent process, so it
+        # misses its registration deadline -- and the raylet "fate-shares" with the agent and
+        # exits, surfacing later as "Unable to register worker with raylet. No such file or
+        # directory". Bounding num_cpus to the allocation (fewer competing imports) and giving
+        # the agent a generous registration timeout keeps the raylet alive.
+        num_cpus = (
+            int(os.environ["SLURM_CPUS_PER_TASK"])
+            if os.environ.get("SLURM_CPUS_PER_TASK")
+            else None
+        )
         depth = 0
         while True:
             try:
                 print("Trying to start ray.")
-                ray.init(local_mode=local_mode, include_dashboard=False)
+                ray.init(
+                    local_mode=local_mode,
+                    include_dashboard=False,
+                    num_cpus=num_cpus,
+                    object_store_memory=4_000_000_000,  # bounded so Ray can't size off the node's full RAM
+                    _system_config={"agent_register_timeout_ms": 600000},  # 10 min; agent needs minutes on NFS
+                )
                 break
-            except:
+            except Exception as e:
                 waittime = np.random.randint(1, 10 * 2**depth)
-                print(f"Failed to start ray on attempt {depth+1}. Retrying in {waittime} seconds...")
+                print(f"Failed to start ray on attempt {depth+1} ({e!r}). Retrying in {waittime} seconds...")
                 sleep(waittime)
                 depth += 1
 

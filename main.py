@@ -324,9 +324,18 @@ if __name__ == '__main__':
         # seed=tune.grid_search([1, 2, 3, 4, 5]) # if you want to run experiments with multiple seeds
     )
 
-    algo = config.build()
+    # NOTE: this previously built a throwaway `algo = config.build()` only to call
+    # `algo.load_checkpoint(transfer_ckpt)`. That algo was never used -- the Tuner below builds
+    # its own from `config.to_dict()` -- so the checkpoint was never actually transferred, AND
+    # the discarded algo's rollout-worker actors reserved CPUs from Ray's scheduler. With
+    # num_cpus bounded to the SLURM allocation those reserved CPUs left too few for the Tuner's
+    # own trial to place, so Tune waited forever (the "specifying num_cpus hangs" symptom).
+    # Removed. To resume from a checkpoint use `tune.Tuner.restore(...)` instead.
     if args.transfer_ckpt:
-        algo.load_checkpoint(args.transfer_ckpt)
+        print(
+            "WARNING: --transfer_ckpt is not wired into the Tune run and is being ignored. "
+            "Use tune.Tuner.restore() to resume from a checkpoint."
+        )
     stop = {
         "timesteps_total": args.train_steps,
     }

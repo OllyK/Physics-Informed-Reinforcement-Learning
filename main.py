@@ -1,6 +1,8 @@
 # Standard library
 import argparse
+import faulthandler
 import os
+import signal
 from datetime import datetime
 from operator import itemgetter
 from pathlib import Path
@@ -21,6 +23,12 @@ import deflector_gym
 from deflector_gym.wrappers import BestRecorder, Best2RewardRecorder, ExpandObservation
 from model import ShallowUQNet
 from utils import StructureWriter, seed_all
+
+# Diagnostics: `kill -USR1 <pid>` dumps the full Python stack of this (possibly stuck) process
+# to stderr / the log. Works without elevated permissions, unlike py-spy/gdb which are blocked
+# by restricted ptrace on the HPC nodes.
+faulthandler.enable()
+faulthandler.register(signal.SIGUSR1)
 
 DATA_DIR = None
 PRETRAINED_CKPT = None
